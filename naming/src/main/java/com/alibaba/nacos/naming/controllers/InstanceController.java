@@ -90,6 +90,9 @@ public class InstanceController {
     };
 
 
+    /**
+     * 注册服务实例信息
+     */
     @CanDistro
     @PostMapping
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
@@ -255,6 +258,9 @@ public class InstanceController {
         throw new NacosException(NacosException.NOT_FOUND, "no matched ip found!");
     }
 
+    /**
+     * 发送心跳信息
+     */
     @CanDistro
     @PutMapping("/beat")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)

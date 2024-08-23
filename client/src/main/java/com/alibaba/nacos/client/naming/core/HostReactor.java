@@ -32,6 +32,7 @@ import java.util.concurrent.*;
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
+ * 用于更新nacos client端的缓存
  * @author xuanyin
  */
 public class HostReactor {
@@ -97,6 +98,10 @@ public class HostReactor {
         return executor.schedule(task, DEFAULT_DELAY, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     *  处理服务端返回的json，将其包装为ServiceInfo
+     * @param json 服务端返回的json结果
+     */
     public ServiceInfo processServiceJSON(String json) {
         ServiceInfo serviceInfo = JSON.parseObject(json, ServiceInfo.class);
         ServiceInfo oldService = serviceInfoMap.get(serviceInfo.getKey());
@@ -219,6 +224,12 @@ public class HostReactor {
         return null;
     }
 
+    /**
+     * 获取service info 信息
+     * @param serviceName service 名称
+     * @param clusters cluster 集群名称
+     * @return
+     */
     public ServiceInfo getServiceInfo(final String serviceName, final String clusters) {
 
         NAMING_LOGGER.debug("failover-mode: " + failoverReactor.isFailoverSwitch());
@@ -278,9 +289,11 @@ public class HostReactor {
         ServiceInfo oldService = getServiceInfo0(serviceName, clusters);
         try {
 
+            //查询服务实例信息
             String result = serverProxy.queryList(serviceName, clusters, pushReceiver.getUDPPort(), false);
 
             if (StringUtils.isNotEmpty(result)) {
+                //更新相应的服务实例信息
                 processServiceJSON(result);
             }
         } catch (Exception e) {
@@ -302,6 +315,9 @@ public class HostReactor {
         }
     }
 
+    /**
+     * 更新服务实例信息
+     */
     public class UpdateTask implements Runnable {
         long lastRefTime = Long.MAX_VALUE;
         private String clusters;

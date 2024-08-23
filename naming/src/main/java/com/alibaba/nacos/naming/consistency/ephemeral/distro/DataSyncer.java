@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Data replicator
+ * 用于AP 节点之间的数据同步
  *
  * @author nkorange
  * @since 1.0.0

@@ -403,6 +403,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
             setServerList(new ArrayList<String>(newList));
         }
         httpclient.start();
+        //检查server list列表，如果发现server list中有不健康的list则直接剔除
         CheckServerHealthTask checkServerHealthTask = new CheckServerHealthTask();
         TimerTaskService.scheduleWithFixedDelay(checkServerHealthTask, 0L, 5L, TimeUnit.SECONDS);
 

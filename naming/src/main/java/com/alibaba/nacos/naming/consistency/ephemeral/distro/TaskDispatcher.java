@@ -32,6 +32,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Data sync task dispatcher
  *
+ * 用于AP模式的数据同步
+ *
  * @author nkorange
  * @since 1.0.0
  */
@@ -58,6 +60,7 @@ public class TaskDispatcher {
     }
 
     public void addTask(String key) {
+        //选择器，选择一个TaskDispatcher 进行数据同步，
         taskSchedulerList.get(UtilsAndCommons.shakeUp(key, cpuCoreCount)).addTask(key);
     }
 

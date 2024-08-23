@@ -67,6 +67,7 @@ public class EventDispatcher {
             observers.add(listener);
         }
 
+        //触发listener 执行
         serviceChanged(serviceInfo);
     }
 

@@ -60,6 +60,7 @@ import java.util.stream.Collectors;
 public class ServiceManager implements RecordListener<Service> {
 
     /**
+     * 用于存放所有的服务实例信息
      * Map<namespace, Map<group::serviceName, Service>>
      */
     private Map<String, Map<String, Service>> serviceMap = new ConcurrentHashMap<>();
@@ -70,6 +71,9 @@ public class ServiceManager implements RecordListener<Service> {
 
     private final Lock lock = new ReentrantLock();
 
+    /**
+     * 用于一致性协议，AP,CP
+     */
     @Resource(name = "consistencyDelegate")
     private ConsistencyService consistencyService;
 
@@ -456,6 +460,7 @@ public class ServiceManager implements RecordListener<Service> {
      */
     public void registerInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
 
+        //创建一个空的服务信息
         createEmptyService(namespaceId, serviceName, instance.isEphemeral());
 
         Service service = getService(namespaceId, serviceName);
@@ -484,6 +489,9 @@ public class ServiceManager implements RecordListener<Service> {
         addInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
     }
 
+    /**
+     * 添加服务实例信息
+     */
     public void addInstance(String namespaceId, String serviceName, boolean ephemeral, Instance... ips) throws NacosException {
 
         String key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, ephemeral);
@@ -496,6 +504,7 @@ public class ServiceManager implements RecordListener<Service> {
             Instances instances = new Instances();
             instances.setInstanceList(instanceList);
 
+            //通过一致性协议进行传播
             consistencyService.put(key, instances);
         }
     }
@@ -633,6 +642,9 @@ public class ServiceManager implements RecordListener<Service> {
         serviceMap.get(service.getNamespaceId()).put(service.getName(), service);
     }
 
+    /**
+     * 添加服务信息，并且初始化Service 添加心跳检测任务
+     */
     private void putServiceAndInit(Service service) throws NacosException {
         putService(service);
         service.init();

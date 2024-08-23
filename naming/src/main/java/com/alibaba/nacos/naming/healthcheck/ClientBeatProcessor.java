@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Thread to update ephemeral instance triggered by client beat
- *
+ * 更新服务的心跳信息
  * @author nkorange
  */
 public class ClientBeatProcessor implements Runnable {

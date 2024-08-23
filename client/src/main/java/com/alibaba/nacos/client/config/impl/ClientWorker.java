@@ -58,6 +58,58 @@ public class ClientWorker {
 
     private static final Logger LOGGER = LogUtils.logger(ClientWorker.class);
 
+
+    @SuppressWarnings("PMD.ThreadPoolCreationRule")
+    public ClientWorker(final HttpAgent agent, final ConfigFilterChainManager configFilterChainManager, final Properties properties) {
+        this.agent = agent;
+        this.configFilterChainManager = configFilterChainManager;
+
+        // Initialize the timeout parameter
+
+        init(properties);
+
+        executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setName("com.alibaba.nacos.client.Worker." + agent.getName());
+                t.setDaemon(true);
+                return t;
+            }
+        });
+
+        executorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setName("com.alibaba.nacos.client.Worker.longPolling." + agent.getName());
+                t.setDaemon(true);
+                return t;
+            }
+        });
+
+        executor.scheduleWithFixedDelay(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    checkConfigInfo();
+                } catch (Throwable e) {
+                    LOGGER.error("[" + agent.getName() + "] [sub-check] rotate check error", e);
+                }
+            }
+        }, 1L, 10L, TimeUnit.MILLISECONDS);
+    }
+
+    private void init(Properties properties) {
+
+        timeout = Math.max(NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
+            Constants.CONFIG_LONG_POLL_TIMEOUT), Constants.MIN_CONFIG_LONG_POLL_TIMEOUT);
+
+        taskPenaltyTime = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_RETRY_TIME), Constants.CONFIG_RETRY_TIME);
+
+        enableRemoteSyncConfig = Boolean.parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
+    }
+
     public void addListeners(String dataId, String group, List<? extends Listener> listeners) {
         group = null2defaultGroup(group);
         CacheData cache = addCacheDataIfAbsent(dataId, group);
@@ -438,56 +490,7 @@ public class ClientWorker {
         return updateList;
     }
 
-    @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public ClientWorker(final HttpAgent agent, final ConfigFilterChainManager configFilterChainManager, final Properties properties) {
-        this.agent = agent;
-        this.configFilterChainManager = configFilterChainManager;
 
-        // Initialize the timeout parameter
-
-        init(properties);
-
-        executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.Worker." + agent.getName());
-                t.setDaemon(true);
-                return t;
-            }
-        });
-
-        executorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.Worker.longPolling." + agent.getName());
-                t.setDaemon(true);
-                return t;
-            }
-        });
-
-        executor.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    checkConfigInfo();
-                } catch (Throwable e) {
-                    LOGGER.error("[" + agent.getName() + "] [sub-check] rotate check error", e);
-                }
-            }
-        }, 1L, 10L, TimeUnit.MILLISECONDS);
-    }
-
-    private void init(Properties properties) {
-
-        timeout = Math.max(NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
-            Constants.CONFIG_LONG_POLL_TIMEOUT), Constants.MIN_CONFIG_LONG_POLL_TIMEOUT);
-
-        taskPenaltyTime = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_RETRY_TIME), Constants.CONFIG_RETRY_TIME);
-
-        enableRemoteSyncConfig = Boolean.parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
-    }
 
     class LongPollingRunnable implements Runnable {
         private int taskId;

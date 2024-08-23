@@ -51,7 +51,6 @@ public class MD5 {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
     }
 
     public static MD5 getInstance() {
@@ -125,7 +124,6 @@ public class MD5 {
             out[j++] = digits[(0xF0 & bt[i]) >>> 4];
             out[j++] = digits[0x0F & bt[i]];
         }
-
         return new String(out);
     }
 
@@ -151,5 +149,4 @@ public class MD5 {
         }
         return data;
     }
-
 }

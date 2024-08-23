@@ -119,6 +119,8 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         });
 
         executor.submit(notifier);
+
+        //启动时从其他注册中心同步服务实例信息到本地
         GlobalExecutor.submit(loadDataTask);
     }
 
@@ -127,6 +129,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         @Override
         public void run() {
             try {
+                //同步其他注册中心的服务实例信息
                 load();
                 if (!initialized) {
                     GlobalExecutor.submit(this, globalConfig.getLoadDataRetryDelayMillis());
@@ -166,6 +169,8 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     @Override
     public void put(String key, Record value) throws NacosException {
         onPut(key, value);
+
+        //当client 端状态改变时比如添加注册、注销、更新服务实例信息时都会进行 AP 同步
         taskDispatcher.addTask(key);
     }
 

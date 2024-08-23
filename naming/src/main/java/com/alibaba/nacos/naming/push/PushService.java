@@ -64,7 +64,8 @@ public class PushService implements ApplicationContextAware, ApplicationListener
     private static volatile ConcurrentMap<String, Receiver.AckEntry> ackMap
         = new ConcurrentHashMap<String, Receiver.AckEntry>();
 
-    private static ConcurrentMap<String, ConcurrentMap<String, PushClient>> clientMap
+
+    private static ConcurrentMap<String /*serviceName*/, ConcurrentMap<String /*instanceName*/, PushClient /* instance udpInfo*/>> clientMap
         = new ConcurrentHashMap<String, ConcurrentMap<String, PushClient>>();
 
     private static volatile ConcurrentHashMap<String, Long> udpSendTimeMap = new ConcurrentHashMap<String, Long>();
@@ -104,6 +105,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         try {
             udpSocket = new DatagramSocket();
 
+            //启动Receiver 用于接收客户端UDP数据
             Receiver receiver = new Receiver();
 
             Thread inThread = new Thread(receiver);
@@ -143,6 +145,8 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             public void run() {
                 try {
                     Loggers.PUSH.info(serviceName + " is changed, add it to push queue.");
+
+                    //获取客户端的udp信息
                     ConcurrentMap<String, PushClient> clients = clientMap.get(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
                     if (MapUtils.isEmpty(clients)) {
                         return;
@@ -278,7 +282,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             //get serviceName
             String name = NamingUtils.getServiceName(serviceFullName);
             //fuzzy match
-            if (outKey.startsWith(namespaceId) && name.indexOf(NamingUtils.getServiceName(serviceName)) >= 0 && groupName.indexOf(NamingUtils.getGroupName(serviceName)) >= 0) {
+            if (outKey.startsWith(namespaceId) && name.contains(NamingUtils.getServiceName(serviceName)) && groupName.contains(NamingUtils.getGroupName(serviceName))) {
                 clientConcurrentMap.forEach((key, client) -> {
                     clients.add(new Subscriber(client.getAddrStr(), client.getAgent(), client.getApp(), client.getIp(), namespaceId, serviceFullName));
                 });
@@ -576,6 +580,9 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         }
     }
 
+    /**
+     * 发送UDP 数据
+     */
     private static Receiver.AckEntry udpPush(Receiver.AckEntry ackEntry) {
         if (ackEntry == null) {
             Loggers.PUSH.error("[NACOS-PUSH] ackEntry is null.");
@@ -621,6 +628,9 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         return StringUtils.strip(host) + "," + port + "," + lastRefTime;
     }
 
+    /**
+     * 用于udp 重试发送
+     */
     public static class Retransmitter implements Runnable {
         Receiver.AckEntry ackEntry;
 

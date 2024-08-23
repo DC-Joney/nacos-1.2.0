@@ -41,6 +41,7 @@ import java.security.MessageDigest;
 import java.util.*;
 
 /**
+ * Naocs 服务节点信息
  * Service of Nacos server side
  * <p>
  * We introduce a 'service --> cluster --> instance' model, in which service stores a list of clusters,
@@ -170,6 +171,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             }
         }
 
+        //更新服务信息
         updateIPs(value.getInstanceList(), KeyBuilder.matchEphemeralInstanceListKey(key));
 
         recalculateChecksum();
@@ -253,6 +255,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
     public void init() {
 
+        //添加心跳任务
         HealthCheckReactor.scheduleCheck(clientBeatCheckTask);
 
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {

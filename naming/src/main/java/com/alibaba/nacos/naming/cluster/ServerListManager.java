@@ -52,9 +52,13 @@ public class ServerListManager {
 
     private List<Server> healthyServers = new ArrayList<>();
 
-    private Map<String, List<Server>> distroConfig = new ConcurrentHashMap<>();
+    /**
+     * key 为 server site，默认是 UtilsAndCommons.UNKNOWN_SITE，既当前map只有一个key
+     */
+    private Map<String /* server site */, List<Server> /* server peer */> distroConfig = new ConcurrentHashMap<>();
 
-    private Map<String, Long> distroBeats = new ConcurrentHashMap<>(16);
+
+    private Map<String/*server addr */, Long /* last updateTime */> distroBeats = new ConcurrentHashMap<>(16);
 
     private Set<String> liveSites = new HashSet<>();
 
@@ -151,6 +155,7 @@ public class ServerListManager {
 
     private void notifyListeners() {
 
+        //
         GlobalExecutor.notifyServerListChange(new Runnable() {
             @Override
             public void run() {
@@ -281,6 +286,9 @@ public class ServerListManager {
         }
     }
 
+    /**
+     * 用于服务列表的更新，当 AP 的server peers 更新时，用于进行通知
+     */
     public class ServerListUpdater implements Runnable {
 
         @Override
@@ -331,6 +339,7 @@ public class ServerListManager {
                     return;
                 }
 
+                //每次上报服务状态时，检查当前节点缓存的其他服务节点的状态，beat是否超时等等，用于筛选健康节点
                 checkDistroHeartbeat();
 
                 int weight = Runtime.getRuntime().availableProcessors() / 2;
@@ -417,6 +426,9 @@ public class ServerListManager {
         Collections.sort(newHealthyList);
         float curRatio = (float) newHealthyList.size() / allLocalSiteSrvs.size();
 
+
+        //判断autoDisabledHealthCheck是否为true，并且60s内是否稳定， 并且判断存活的server节点是否大于70%，如果大于70% （主要针对短时间内大量server peer节点不可用的场景，比如分区时）
+        // 则开启健康检查用于判断是服务节点是否可以剔除、以及是否需要健康检查等
         if (autoDisabledHealthCheck
             && curRatio > switchDomain.getDistroThreshold()
             && System.currentTimeMillis() - lastHealthServerMillis > STABLE_PERIOD) {
@@ -429,6 +441,7 @@ public class ServerListManager {
             autoDisabledHealthCheck = false;
         }
 
+        //判断 健康的server peer节点是否改变，如果改变则判断是否开启了健康检查，如果开启先将健康检查关闭，并且将autoDisabledHealthCheck设置为 true
         if (!CollectionUtils.isEqualCollection(healthyServers, newHealthyList)) {
             // for every change disable healthy check for some while
             Loggers.SRV_LOG.info("[NACOS-DISTRO] healthy server list changed, old: {}, new: {}",

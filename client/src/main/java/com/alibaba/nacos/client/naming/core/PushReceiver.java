@@ -29,6 +29,7 @@ import java.util.concurrent.ThreadFactory;
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
+ * 用于接收推送的UDP请求，更新缓存的服务信息
  * @author xuanyin
  */
 public class PushReceiver implements Runnable {

@@ -33,6 +33,7 @@ import java.util.List;
 
 
 /**
+ * 用于检查客户端的心跳信息, 当心跳过期后，剔除服务实例信息
  * Check and update statues of ephemeral instances, remove them if they have been expired.
  *
  * @author nkorange

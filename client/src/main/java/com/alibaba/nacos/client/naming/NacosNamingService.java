@@ -66,8 +66,15 @@ public class NacosNamingService implements NamingService {
 
     private String logName;
 
+
+    /**
+     *
+     */
     private HostReactor hostReactor;
 
+    /**
+     * 用于发送心跳机制
+     */
     private BeatReactor beatReactor;
 
     private EventDispatcher eventDispatcher;
@@ -93,7 +100,11 @@ public class NacosNamingService implements NamingService {
         initLogName(properties);
 
         eventDispatcher = new EventDispatcher();
+
+        //用于查询服务信息、注册服务、注销服务、发送心跳等等
         serverProxy = new NamingProxy(namespace, endpoint, serverList, properties);
+
+        //主要职责是添加定时任务，发送心跳
         beatReactor = new BeatReactor(serverProxy, initClientBeatThreadCount(properties));
         hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties),
             initPollingThreadCount(properties));
@@ -411,6 +422,15 @@ public class NacosNamingService implements NamingService {
         subscribe(serviceName, Constants.DEFAULT_GROUP, clusters, listener);
     }
 
+
+    /**
+     * 每次订阅时，都会添加对应的listener，都会出发新的订阅
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @param clusters    list of cluster
+     * @param listener    event listener
+     * @throws NacosException
+     */
     @Override
     public void subscribe(String serviceName, String groupName, List<String> clusters, EventListener listener) throws NacosException {
         eventDispatcher.addListener(hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName),

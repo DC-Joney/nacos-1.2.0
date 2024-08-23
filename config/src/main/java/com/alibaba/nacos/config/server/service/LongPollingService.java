@@ -298,6 +298,7 @@ public class LongPollingService extends AbstractEventListener {
 
     // =================
 
+    //监控本地事件改变
     class DataChangeTask implements Runnable {
         @Override
         public void run() {

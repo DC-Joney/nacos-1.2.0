@@ -142,7 +142,7 @@ public class SubscribeCluster_ITCase {
      */
     @Test
     public void subscribeUnhealthy() throws Exception {
-        String serviceName = randomDomainName();
+        String serviceName = "nacos-test";
 
         naming.subscribe(serviceName, Arrays.asList("c1"), new EventListener() {
             @Override
@@ -152,6 +152,16 @@ public class SubscribeCluster_ITCase {
                 instances = ((NamingEvent) event).getInstances();
             }
         });
+
+        Instance instance = new Instance();
+        instance.setEphemeral(true);
+        instance.setIp("1.1.1.1");
+        instance.setPort(8080);
+        instance.setServiceName(serviceName);
+        instance.setClusterName("nacos-cluster");
+
+
+//        naming.registerInstance(serviceName, instance);
 
         naming.registerInstance(serviceName, "1.1.1.1", TEST_PORT, "c1");
 
